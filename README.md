@@ -4,7 +4,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Philiprehberger.HealthCheckKit.svg)](https://www.nuget.org/packages/Philiprehberger.HealthCheckKit)
 [![License](https://img.shields.io/github/license/philiprehberger/dotnet-health-check-kit)](LICENSE)
 
-Composable health checks for ASP.NET Core — built-in URL, disk space, memory, and custom checks with timeout and caching.
+Composable health checks for ASP.NET Core with built-in URL, disk space, memory, and custom check support.
 
 ## Installation
 
