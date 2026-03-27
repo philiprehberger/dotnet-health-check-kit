@@ -3,6 +3,7 @@
 [![CI](https://github.com/philiprehberger/dotnet-health-check-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/dotnet-health-check-kit/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/Philiprehberger.HealthCheckKit.svg)](https://www.nuget.org/packages/Philiprehberger.HealthCheckKit)
 [![License](https://img.shields.io/github/license/philiprehberger/dotnet-health-check-kit)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 Composable health checks for ASP.NET Core with built-in URL, disk space, memory, and custom check support.
 
