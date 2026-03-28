@@ -11,9 +11,9 @@
 
     <!-- Package metadata -->
     <PackageId>Philiprehberger.HealthCheckKit</PackageId>
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
     <Authors>Philip Rehberger</Authors>
-    <Description>Composable health checks for ASP.NET Core with built-in URL, disk space, memory, and custom check support.</Description>
+    <Description>Composable health checks for ASP.NET Core with built-in URL, TCP, DNS, certificate, disk, and memory checks.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>health-check;monitoring;aspnetcore;diagnostics;readiness</PackageTags>
@@ -23,6 +23,10 @@
 
   <ItemGroup>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Philiprehberger.HealthCheckKit.Tests" />
   </ItemGroup>
 
   <ItemGroup>

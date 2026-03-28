@@ -4,7 +4,8 @@ namespace Philiprehberger.HealthCheckKit;
 
 /// <summary>
 /// Fluent builder for composing health checks. Use with
-/// <see cref="ServiceCollectionExtensions.AddHealthCheckKit"/> to register checks in the DI container.
+/// <see cref="ServiceCollectionExtensions.AddHealthCheckKit"/> to register checks in the DI container,
+/// or call <see cref="BuildRunner"/> to create a <see cref="HealthCheckRunner"/> for standalone execution.
 /// </summary>
 public sealed class HealthCheckKitBuilder
 {
@@ -47,6 +48,43 @@ public sealed class HealthCheckKitBuilder
     }
 
     /// <summary>
+    /// Adds a TCP port connectivity check that verifies a remote host is reachable on the specified port.
+    /// </summary>
+    /// <param name="host">The hostname or IP address to connect to.</param>
+    /// <param name="port">The TCP port to connect to.</param>
+    /// <param name="timeout">Optional timeout for the connection attempt. Defaults to 5 seconds.</param>
+    /// <returns>The builder for fluent chaining.</returns>
+    public HealthCheckKitBuilder AddTcpCheck(string host, int port, TimeSpan? timeout = null)
+    {
+        Checks.Add(($"tcp:{host}:{port}", _ => new TcpHealthCheck(host, port, timeout)));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a DNS resolution check that verifies a hostname can be resolved to at least one IP address.
+    /// </summary>
+    /// <param name="hostname">The hostname to resolve.</param>
+    /// <returns>The builder for fluent chaining.</returns>
+    public HealthCheckKitBuilder AddDnsCheck(string hostname)
+    {
+        Checks.Add(($"dns:{hostname}", _ => new DnsHealthCheck(hostname)));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an SSL certificate expiration check that verifies the server certificate is valid
+    /// and not expiring within the specified warning window.
+    /// </summary>
+    /// <param name="host">The hostname to connect to over TLS.</param>
+    /// <param name="warningDays">Number of days before expiration to report as degraded. Defaults to 30.</param>
+    /// <returns>The builder for fluent chaining.</returns>
+    public HealthCheckKitBuilder AddCertificateCheck(string host, int warningDays = 30)
+    {
+        Checks.Add(($"cert:{host}", _ => new CertificateHealthCheck(host, warningDays)));
+        return this;
+    }
+
+    /// <summary>
     /// Adds a custom health check with a user-defined check function.
     /// </summary>
     /// <param name="name">A unique name for the health check.</param>
@@ -56,6 +94,24 @@ public sealed class HealthCheckKitBuilder
     {
         Checks.Add((name, _ => new DelegateHealthCheck(check)));
         return this;
+    }
+
+    /// <summary>
+    /// Builds a <see cref="HealthCheckRunner"/> that can execute all configured checks
+    /// and produce a composite <see cref="HealthReport"/>.
+    /// </summary>
+    /// <returns>A runner that executes all configured health checks.</returns>
+    public HealthCheckRunner BuildRunner()
+    {
+        var runner = new HealthCheckRunner();
+
+        foreach (var (name, factory) in Checks)
+        {
+            var check = factory(null!);
+            runner.AddCheck(name, ct => check.CheckHealthAsync(null!, ct));
+        }
+
+        return runner;
     }
 }
 

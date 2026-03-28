@@ -17,6 +17,7 @@ jobs:
           dotnet-version: '8.0.x'
       - run: dotnet restore src/Philiprehberger.HealthCheckKit.csproj
       - run: dotnet build src/Philiprehberger.HealthCheckKit.csproj --configuration Release --no-restore
+      - run: dotnet test tests/Philiprehberger.HealthCheckKit.Tests/Philiprehberger.HealthCheckKit.Tests.csproj --configuration Release --no-restore
 
   publish:
     needs: build

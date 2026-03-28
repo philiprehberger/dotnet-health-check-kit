@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 (2026-03-28)
+
+- Add TCP port connectivity check via `AddTcpCheck` with configurable timeout
+- Add DNS resolution check via `AddDnsCheck`
+- Add SSL certificate expiration check via `AddCertificateCheck` with configurable warning window
+- Add composite `HealthReport` with overall status, individual results, and timing
+- Add `HealthCheckRunner` with `RunAllAsync` for standalone health check execution
+- Add `BuildRunner` method to `HealthCheckKitBuilder`
+- Add unit tests for all health check types
+- Add GitHub issue templates, dependabot, and pull request template
+- Update CI workflow to include test step
+
 ## 0.1.1 (2026-03-23)
 
 - Shorten package description to meet 120-character limit
