@@ -11,7 +11,7 @@
 
     <!-- Package metadata -->
     <PackageId>Philiprehberger.HealthCheckKit</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Philip Rehberger</Authors>
     <Description>Composable health checks for ASP.NET Core with built-in URL, TCP, DNS, certificate, disk, and memory checks.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
