@@ -97,6 +97,37 @@ builder.Services.AddHealthCheckKit(checks => checks
     .AddMemoryCheck(maximumBytes: 1_073_741_824));
 ```
 
+### Ping and Process Memory
+
+```csharp
+using Philiprehberger.HealthCheckKit;
+
+builder.Services.AddHealthCheckKit(checks => checks
+    .AddPingCheck("api.example.com")
+    .AddProcessMemoryCheck(maximumWorkingSetBytes: 2_147_483_648));
+```
+
+### Tagging Checks
+
+Each `AddXxxCheck` accepts a `params string[] tags` argument that is surfaced on the report entry:
+
+```csharp
+using Philiprehberger.HealthCheckKit;
+
+var runner = new HealthCheckKitBuilder()
+    .AddTcpCheck("db", 5432, tags: new[] { "infra", "critical" })
+    .AddUrlCheck("https://api.example.com/health", tags: new[] { "api" })
+    .BuildRunner();
+
+runner.PerCheckTimeout = TimeSpan.FromSeconds(10);
+var report = await runner.RunAllAsync();
+
+foreach (var entry in report.Entries)
+{
+    Console.WriteLine($"{entry.Name} [{string.Join(',', entry.Tags)}]: {entry.Result.Status}");
+}
+```
+
 ### Custom Checks
 
 ```csharp
@@ -119,20 +150,23 @@ builder.Services.AddHealthCheckKit(checks => checks
 
 | Method | Description |
 |--------|-------------|
-| `AddUrlCheck(string url, TimeSpan? timeout = null)` | Adds an HTTP GET check for the given URL |
-| `AddTcpCheck(string host, int port, TimeSpan? timeout = null)` | Adds a TCP port connectivity check |
-| `AddDnsCheck(string hostname)` | Adds a DNS resolution check |
-| `AddCertificateCheck(string host, int warningDays = 30)` | Adds an SSL certificate expiration check |
-| `AddDiskSpaceCheck(long minimumFreeBytes, string? drivePath = null)` | Adds a disk free space check |
-| `AddMemoryCheck(long maximumBytes)` | Adds a managed memory usage check |
-| `AddCustomCheck(string name, Func<CancellationToken, Task<HealthCheckResult>> check)` | Adds a custom delegate-based check |
+| `AddUrlCheck(string url, TimeSpan? timeout = null, params string[] tags)` | Adds an HTTP GET check for the given URL |
+| `AddTcpCheck(string host, int port, TimeSpan? timeout = null, params string[] tags)` | Adds a TCP port connectivity check |
+| `AddDnsCheck(string hostname, params string[] tags)` | Adds a DNS resolution check |
+| `AddCertificateCheck(string host, int warningDays = 30, params string[] tags)` | Adds an SSL certificate expiration check |
+| `AddDiskSpaceCheck(long minimumFreeBytes, string? drivePath = null, params string[] tags)` | Adds a disk free space check |
+| `AddMemoryCheck(long maximumBytes, params string[] tags)` | Adds a managed memory usage check |
+| `AddProcessMemoryCheck(long maximumWorkingSetBytes, params string[] tags)` | Adds a process working-set memory check |
+| `AddPingCheck(string host, TimeSpan? timeout = null, params string[] tags)` | Adds an ICMP ping reachability check |
+| `AddCustomCheck(string name, Func<CancellationToken, Task<HealthCheckResult>> check, params string[] tags)` | Adds a custom delegate-based check |
 | `BuildRunner()` | Creates a `HealthCheckRunner` for standalone execution |
 
 ### `HealthCheckRunner`
 
-| Method | Description |
-|--------|-------------|
+| Method / Property | Description |
+|-------------------|-------------|
 | `RunAllAsync(CancellationToken cancellationToken = default)` | Runs all checks and returns a composite `HealthReport` |
+| `PerCheckTimeout` | Per-check timeout (default 30s); a hung check is reported as Unhealthy |
 
 ### `HealthReport`
 
@@ -149,6 +183,7 @@ builder.Services.AddHealthCheckKit(checks => checks
 | `Name` | `string` | Name of the health check |
 | `Result` | `HealthCheckResult` | The check result with status and description |
 | `Duration` | `TimeSpan` | How long the check took to execute |
+| `Tags` | `IReadOnlyList<string>` | Tags associated with the check |
 
 ### `ServiceCollectionExtensions`
 

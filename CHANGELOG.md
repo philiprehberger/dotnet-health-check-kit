@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-04-27)
+
+- Add `AddPingCheck(host, timeout?)` for ICMP reachability via `System.Net.NetworkInformation.Ping`
+- Add `AddProcessMemoryCheck(maximumWorkingSetBytes)` distinct from the managed-heap `AddMemoryCheck`
+- Add `tags` parameter to every `AddXxxCheck` method; tags surface on the report's `HealthCheckEntry.Tags`
+- Add `HealthCheckRunner.PerCheckTimeout` (default 30s) so a hung individual check no longer stalls the report
+- Pin CI workflow to `actions/checkout@v5` per the standardized template
+
 ## 0.2.1 (2026-03-31)
 
 - Standardize README to 3-badge format with emoji Support section

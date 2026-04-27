@@ -86,4 +86,37 @@ public class HealthReportTests
         var entry = Assert.Single(report.Entries);
         Assert.Equal(HealthStatus.Unhealthy, entry.Result.Status);
     }
+
+    [Fact]
+    public async Task RunAllAsync_TagsArePropagatedToEntry()
+    {
+        var builder = new HealthCheckKitBuilder();
+        builder.AddCustomCheck("tagged", _ => Task.FromResult(HealthCheckResult.Healthy("OK")), "infra", "critical");
+
+        var runner = builder.BuildRunner();
+        var report = await runner.RunAllAsync();
+
+        var entry = Assert.Single(report.Entries);
+        Assert.Equal(new[] { "infra", "critical" }, entry.Tags);
+    }
+
+    [Fact]
+    public async Task RunAllAsync_PerCheckTimeoutBoundsHungCheck()
+    {
+        var builder = new HealthCheckKitBuilder();
+        builder.AddCustomCheck("hangs", async ct =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), ct);
+            return HealthCheckResult.Healthy("never");
+        });
+
+        var runner = builder.BuildRunner();
+        runner.PerCheckTimeout = TimeSpan.FromMilliseconds(100);
+
+        var report = await runner.RunAllAsync();
+
+        Assert.Equal(HealthReportStatus.Unhealthy, report.Status);
+        var entry = Assert.Single(report.Entries);
+        Assert.Contains("per-check timeout", entry.Result.Description);
+    }
 }

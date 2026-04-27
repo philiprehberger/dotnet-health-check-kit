@@ -37,6 +37,11 @@ public sealed class HealthCheckEntry
     /// Gets how long the health check took to execute.
     /// </summary>
     public required TimeSpan Duration { get; init; }
+
+    /// <summary>
+    /// Gets the tags associated with this health check, useful for grouping in the report.
+    /// </summary>
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -65,7 +70,13 @@ public sealed class HealthReport
 /// </summary>
 public sealed class HealthCheckRunner
 {
-    private readonly List<(string Name, Func<CancellationToken, Task<HealthCheckResult>> Check)> _checks = [];
+    private readonly List<(string Name, IReadOnlyList<string> Tags, Func<CancellationToken, Task<HealthCheckResult>> Check)> _checks = [];
+
+    /// <summary>
+    /// Gets or sets the per-check timeout. When set, any individual check that does not complete
+    /// within this duration is reported as <see cref="HealthCheckResult.Unhealthy"/>. Defaults to 30 seconds.
+    /// </summary>
+    public TimeSpan PerCheckTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// Initializes a new instance of <see cref="HealthCheckRunner"/>.
@@ -81,12 +92,24 @@ public sealed class HealthCheckRunner
     /// <param name="check">The function that performs the health check.</param>
     internal void AddCheck(string name, Func<CancellationToken, Task<HealthCheckResult>> check)
     {
-        _checks.Add((name, check));
+        _checks.Add((name, Array.Empty<string>(), check));
+    }
+
+    /// <summary>
+    /// Adds a named, tagged health check to the runner.
+    /// </summary>
+    /// <param name="name">The name of the health check.</param>
+    /// <param name="tags">Tags associated with the check.</param>
+    /// <param name="check">The function that performs the health check.</param>
+    internal void AddCheck(string name, IReadOnlyList<string> tags, Func<CancellationToken, Task<HealthCheckResult>> check)
+    {
+        _checks.Add((name, tags, check));
     }
 
     /// <summary>
     /// Runs all configured health checks and returns a composite <see cref="HealthReport"/>
     /// with overall status, individual results, and timing information.
+    /// A hung individual check is bounded by <see cref="PerCheckTimeout"/>.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A <see cref="HealthReport"/> summarizing all check results.</returns>
@@ -95,14 +118,21 @@ public sealed class HealthCheckRunner
         var totalStopwatch = Stopwatch.StartNew();
         var entries = new List<HealthCheckEntry>(_checks.Count);
 
-        foreach (var (name, check) in _checks)
+        foreach (var (name, tags, check) in _checks)
         {
             var sw = Stopwatch.StartNew();
             HealthCheckResult result;
 
+            using var timeoutCts = new CancellationTokenSource(PerCheckTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
+
             try
             {
-                result = await check(cancellationToken);
+                result = await check(linkedCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                result = HealthCheckResult.Unhealthy($"Check '{name}' exceeded the {PerCheckTimeout} per-check timeout.");
             }
             catch (Exception ex)
             {
@@ -115,7 +145,8 @@ public sealed class HealthCheckRunner
             {
                 Name = name,
                 Result = result,
-                Duration = sw.Elapsed
+                Duration = sw.Elapsed,
+                Tags = tags
             });
         }
 

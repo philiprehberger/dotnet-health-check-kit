@@ -22,13 +22,13 @@ public static class ServiceCollectionExtensions
 
         var healthChecks = services.AddHealthChecks();
 
-        foreach (var (name, factory) in builder.Checks)
+        foreach (var (name, tags, factory) in builder.Checks)
         {
             healthChecks.Add(new Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckRegistration(
                 name,
                 factory,
                 failureStatus: null,
-                tags: null));
+                tags: tags));
         }
 
         return services;
